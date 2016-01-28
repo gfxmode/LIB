@@ -11,8 +11,8 @@
 #include <string.h>
 #include <stdarg.h>
 #include "Lock.h"
-#include "../LIB/GlobalDefine.h"
-#include "../LIB/TimeWrapper.h"
+#include "GlobalDefine.h"
+#include "TimeWrapper.h"
 
 using namespace std;
 const int MAX_LOG_SIZE = 10000;
