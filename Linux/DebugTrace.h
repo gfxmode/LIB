@@ -10,46 +10,49 @@
 #include <string>
 #include <string.h>
 #include <stdarg.h>
+#include <vector>
 #include "Lock.h"
 #include "GlobalDefine.h"
 #include "TimeWrapper.h"
 
 using namespace std;
 const int MAX_LOG_SIZE = 10000;
-const int MAX_LOG_CHAR_LENGTH = 512;
-const int MAX_TIME_STAMP_LENGTH = 20;
+const int MAX_LOG_CHAR_LENGTH = 256;
+const int MAX_TIME_STAMP_LENGTH = 30;
 const int MAX_LOG_FILE_STRING_BUFF = 100;
 const int MAX_LOG_BACKUP_NUM = 10;
 
 // Base class
-class CDebugTrace
+class CConsoleLog
 {
 public:
-    CDebugTrace() { ; }
-    virtual ~CDebugTrace() { ; }
+    CConsoleLog();
+    virtual ~CConsoleLog();
 
 public:
-    virtual void formatDebugStr(const char* format, va_list argp);
-    virtual void writeFile(const char* format, ...);
+    virtual void writeFile(const char* arrMsg);
 
 public:
-    static CDebugTrace* getInstance();
+    static CConsoleLog* getInstance();
     static void freeInstance();
-
-protected:
-    char m_arrLogMsg[MAX_LOG_CHAR_LENGTH];
-    static CDebugTrace* m_dbgObj;
+    static CConsoleLog* m_pDbgObj;
 };
 
 // Write log to File
-class CFileLog : public CDebugTrace
+class CFileLog : public CConsoleLog
 {
 public:
     CFileLog();
     virtual ~CFileLog();
 
 public:
-    void writeFile(const char* format, ...);
+    void writeFile(const char* arrMsg);
+
+public:
+    static CFileLog* getInstance();
+    static void freeInstance();
+    static CFileLog* m_pDbgObj;
+
 private:
     int getFileLineNum();
 
@@ -60,6 +63,30 @@ private:
     CMutexLock* m_pMutexLock;
 };
 
-#define dout CDebugTrace::getInstance()->writeFile
+// CDebug composite class
+class CDebugComposite
+{
+public:
+    CDebugComposite();
+    virtual ~CDebugComposite();
+
+    void writeLog(const char* format, ...);
+
+public:
+    static CDebugComposite* getInstance();
+    static void freeInstance();
+    static void writeToConsole();
+    static void writeToFile();
+
+private:
+    void formatDebugStr(const char* format, va_list arg);
+
+private:
+    static vector<CConsoleLog*> m_vecDbgComp;
+    static CDebugComposite* m_pCompObj;
+    char m_arrLogMsg[MAX_LOG_CHAR_LENGTH];
+};
+
+#define dout CDebugComposite::getInstance()->writeLog
 
 #endif // CDEBUGTRACE_H

@@ -1,9 +1,14 @@
 #include "DebugTrace.h"
 
-CDebugTrace* CDebugTrace::m_dbgObj = NULL;
+CConsoleLog* CConsoleLog::m_pDbgObj = NULL;
+CFileLog* CFileLog::m_pDbgObj = NULL;
+vector<CConsoleLog*> CDebugComposite::m_vecDbgComp;
+CDebugComposite* CDebugComposite::m_pCompObj = NULL;
 
 CFileLog::CFileLog()
 {
+    m_pDbgObj = NULL;
+
     m_strLogName = "debug.log";
     m_pFile = NULL;
     m_pMutexLock = new CMutexLock();
@@ -22,13 +27,15 @@ CFileLog::~CFileLog()
         delete m_pMutexLock;
         m_pMutexLock = NULL;
     }
-}
- void CFileLog::writeFile(const char *format, ...)
-{
-    va_list argp;
-    va_start(argp, format);
-    formatDebugStr(format, argp);
 
+    if(NULL != m_pDbgObj)
+    {
+        delete m_pDbgObj;
+        m_pDbgObj = NULL;
+    }
+}
+ void CFileLog::writeFile(const char *arrMsg)
+{
     m_pMutexLock->lock();
 
     m_pFile = fopen(m_strLogName.c_str(), "a+");
@@ -40,7 +47,7 @@ CFileLog::~CFileLog()
         sprintf(arrTimeStamp, "%4.4d-%2.2d-%2.2d %2.2d:%2.2d:%2.2d.%3.3d", sysTime.wYear, sysTime.wMonth, \
                 sysTime.wDay, sysTime.wHour, sysTime.wMinute, sysTime.wSecond, sysTime.wMilliseconds);
 
-        fprintf(m_pFile, "%s %s\n", arrTimeStamp, m_arrLogMsg);
+        fprintf(m_pFile, "%s\n", arrMsg);
         m_iLineCnt++;       // increase m_iLineCnt;
 
         if(m_iLineCnt > MAX_LOG_SIZE)
@@ -75,7 +82,24 @@ CFileLog::~CFileLog()
     }
 
     m_pMutexLock->unLock();
-}
+ }
+
+ CFileLog *CFileLog::getInstance()
+ {
+     if(NULL == m_pDbgObj)
+         m_pDbgObj = new CFileLog();
+
+     return m_pDbgObj;
+ }
+
+ void CFileLog::freeInstance()
+ {
+     if(NULL != m_pDbgObj)
+     {
+         delete m_pDbgObj;
+         m_pDbgObj = NULL;
+     }
+ }
 
 int CFileLog::getFileLineNum()
 {
@@ -96,37 +120,138 @@ int CFileLog::getFileLineNum()
     return cnt;
 }
 
-// Format DebugStr to arrLogMsg
-void CDebugTrace::formatDebugStr(const char *format, va_list argp)
+CConsoleLog::CConsoleLog()
+{
+    m_pDbgObj = NULL;
+}
+
+CConsoleLog::~CConsoleLog()
+{
+    if(NULL != m_pDbgObj)
+    {
+        delete m_pDbgObj;
+        m_pDbgObj = NULL;
+    }
+}
+
+void CConsoleLog::writeFile(const char* arrMsg)
+{
+    // Write LogMsg to console
+    printf("%s\n", arrMsg);
+}
+
+CConsoleLog *CConsoleLog::getInstance()
+{
+    if(NULL == m_pDbgObj)
+        m_pDbgObj = new CConsoleLog();
+
+    return m_pDbgObj;
+}
+
+void CConsoleLog::freeInstance()
+{
+    if(NULL != m_pDbgObj)
+    {
+        delete m_pDbgObj;
+        m_pDbgObj = NULL;
+    }
+}
+
+CDebugComposite::CDebugComposite()
+{
+    m_vecDbgComp.clear();
+    m_pCompObj = NULL;
+}
+
+CDebugComposite::~CDebugComposite()
+{
+    // free CDebugTrace Object
+    for(size_t i = 0; i < m_vecDbgComp.size(); i++)
+    {
+        if(NULL != m_vecDbgComp.at(i))
+        {
+            delete m_vecDbgComp.at(i);
+            m_vecDbgComp.at(i) = NULL;
+        }
+    }
+    m_vecDbgComp.clear();
+
+    if(NULL != m_pCompObj)
+    {
+        delete m_pCompObj;
+        m_pCompObj = NULL;
+    }
+}
+
+void CDebugComposite::writeLog(const char *format, ...)
+{
+    va_list arg;
+    va_start(arg, format);
+    formatDebugStr(format, arg);
+    va_end(arg);
+
+    for(size_t i = 0; i < m_vecDbgComp.size(); i++)
+    {
+        if(NULL == m_vecDbgComp.at(i))
+            continue;
+
+        (m_vecDbgComp.at(i))->writeFile(m_arrLogMsg);
+    }
+}
+
+CDebugComposite *CDebugComposite::getInstance()
+{
+    if(NULL == m_pCompObj)
+    {
+        m_pCompObj = new CDebugComposite();
+    }
+
+    return m_pCompObj;
+}
+
+void CDebugComposite::freeInstance()
+{
+    // free CDebugTrace Object
+    for(size_t i = 0; i < m_vecDbgComp.size(); i++)
+    {
+        if(NULL != m_vecDbgComp.at(i))
+        {
+            delete m_vecDbgComp.at(i);
+            m_vecDbgComp.at(i) = NULL;
+        }
+    }
+    m_vecDbgComp.clear();
+}
+
+void CDebugComposite::writeToConsole()
+{
+    CConsoleLog* pConObj = new CConsoleLog();
+    m_vecDbgComp.push_back(pConObj);
+}
+
+void CDebugComposite::writeToFile()
+{
+    CFileLog* pFileObj = new CFileLog();
+    m_vecDbgComp.push_back(pFileObj);
+}
+
+void CDebugComposite::formatDebugStr(const char *format, va_list arg)
 {
     if (NULL == format) return;
+
+    // Generate timestamp array
+    SYSTEMTIME sysTime = TimeWrapper::getLocalTime();
+    char arrTimeStamp[MAX_TIME_STAMP_LENGTH];
+    memset(arrTimeStamp, 0, sizeof(arrTimeStamp));
+    sprintf(arrTimeStamp, "%4.4d-%2.2d-%2.2d %2.2d:%2.2d:%2.2d.%3.3d ", sysTime.wYear, sysTime.wMonth, \
+            sysTime.wDay, sysTime.wHour, sysTime.wMinute, sysTime.wSecond, sysTime.wMilliseconds);
+
+    // Generate logMsg array
     memset(m_arrLogMsg, 0, sizeof(m_arrLogMsg));
-    vsnprintf(m_arrLogMsg, sizeof(m_arrLogMsg), format, argp);
+    vsnprintf(m_arrLogMsg + strlen(arrTimeStamp), sizeof(m_arrLogMsg) - strlen(arrTimeStamp), format, arg);
+
+    // Add timestamp array to head of logMsg array
+    memcpy(m_arrLogMsg, arrTimeStamp, strlen(arrTimeStamp));
+
 }
 
-void CDebugTrace::writeFile(const char *format, ...)
-{
-    va_list argp;
-    va_start(argp, format);
-
-    formatDebugStr(format, argp);
-}
-
-CDebugTrace *CDebugTrace::getInstance()
-{
-    if (NULL == m_dbgObj)
-    {
-        m_dbgObj = new CFileLog();
-    }
-
-    return m_dbgObj;
-}
-
-void CDebugTrace::freeInstance()
-{
-    if (NULL != m_dbgObj)
-    {
-        delete m_dbgObj;
-        m_dbgObj = NULL;
-    }
-}
