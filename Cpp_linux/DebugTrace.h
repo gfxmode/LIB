@@ -87,6 +87,8 @@ private:
     char m_arrLogMsg[MAX_LOG_CHAR_LENGTH];
 };
 
-#define dout CDebugComposite::getInstance()->writeLog
+#define _dToFile CDebugComposite::writeToFile
+#define _dToConsole CDebugComposite::writeToConsole
+#define _dout CDebugComposite::getInstance()->writeLog
 
 #endif // CDEBUGTRACE_H

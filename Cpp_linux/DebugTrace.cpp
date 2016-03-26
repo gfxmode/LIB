@@ -225,12 +225,16 @@ void CDebugComposite::freeInstance()
 
 void CDebugComposite::writeToConsole()
 {
+    getInstance();
+
     CConsoleLog* pConObj = new CConsoleLog();
     m_vecDbgComp.push_back(pConObj);
 }
 
 void CDebugComposite::writeToFile()
 {
+    getInstance();
+
     CFileLog* pFileObj = new CFileLog();
     m_vecDbgComp.push_back(pFileObj);
 }
