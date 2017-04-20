@@ -1,0 +1,23 @@
+<html ng-app="myApp">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script type="text/javascript" src="../../3rd_lib/angular.1.2.2.js"></script>
+<script type="text/javascript" src="../../Util/dist/Util.js"></script>
+
+<script type="text/javascript">
+    angular.module('myApp', ['Util']);
+    angular.module('myApp')
+        .controller('MyController', function($scope, DataService){
+            DataService.set_session_storage('key', 'test1');
+            console.log(DataService.get_session_storage('key'));
+        });
+</script>
+
+<div ng-controller="MyController">
+</div>
+
+</body>
+</html>
