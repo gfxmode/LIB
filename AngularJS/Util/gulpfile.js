@@ -1,4 +1,5 @@
 var gulp = require('gulp');
+var gulpSequence = require('gulp-sequence');
 var jshint = require('gulp-jshint');
 var concat = require('gulp-concat');
 var path = require('path');
@@ -23,4 +24,6 @@ gulp.task('concat',function(){
     .pipe(gulp.dest(destFolder));
 });
 
-gulp.task('default', ['clean', 'jshint', 'concat'], function(){});
+gulp.task('all', gulpSequence('clean', 'jshint', 'concat'));
+
+gulp.task('default', ['all'], function(){});

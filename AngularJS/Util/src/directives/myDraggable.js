@@ -1,10 +1,11 @@
 (function(){
+    'use strict';
 angular.module('Util')
-    .directive('draggable', ['$document', function($document) {
+    .directive('myDraggable', ['$document', function($document) {
         return function(scope, element, attr) {
         var startX = 0, startY = 0, x = 0, y = 0;
         var draggableObj = element;
-        
+
         draggableObj.css({
             position: 'relative',
             cursor: 'move'
