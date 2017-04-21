@@ -10,13 +10,18 @@
 <script type="text/javascript">
     angular.module('myApp', ['Util']);
     angular.module('myApp')
-        .controller('MyController', function($scope, DataService){
+        .controller('MyController', function($scope, $rootScope, DataService, SearchScope){
+            $scope.id = "btnDrag";
+            $scope.values = [{"label": "Apple", "value": 0}, {"label": "Banana", "value": 1}, {"label": "Pear", "value": 2}];
             DataService.set_session_storage('key', 'test1');
             console.log(DataService.get_session_storage('key'));
+            console.log(SearchScope($rootScope, "btnDrag"));
         });
 </script>
 
-<div ng-controller="MyController">
+<div id="ctrlID" ng-controller="MyController">
+	<button id="btnDrag" my-draggable>DragMe</button>
+    <my-single-select id="idSelect1" values="values"></my-single-select>
 </div>
 
 </body>
