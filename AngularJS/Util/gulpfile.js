@@ -9,7 +9,7 @@ var destFolder = 'dist';
 var destFileName = 'Util.js';
 
 gulp.task('clean', function (cb){
-    return del([destFolder + '/**/*'], cb);
+    return del([destFolder + '/**/*'], {force: true}, cb);
 });
 
 gulp.task('jshint', function(){
