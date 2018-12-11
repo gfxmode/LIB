@@ -94,6 +94,6 @@ void Log(const char *pszFmt,...)
 }
 
 // 打印文件名、代码行数
-#define LOG(fmt, ...) Log(fmt"(%s, %d)\r\n", __FILE__,  __LINE__)
+#define LOG(fmt, ...) Log("(%s, %d)" fmt "\r\n", __FILE__,  __LINE__, ##__VA_ARGS__)
 
 #endif // __LOG_H__
